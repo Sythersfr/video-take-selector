@@ -225,6 +225,71 @@
             margin-bottom: 5px;
         }
 
+        .trim-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .trim-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .trim-btn-play {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .trim-btn-play:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .trim-btn-reset {
+            background: #6c757d;
+            color: white;
+        }
+
+        .trim-btn-reset:hover {
+            background: #5a6268;
+        }
+
+        .trim-btn-adjust {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .trim-btn-adjust:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .quick-adjustments {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .adjust-label {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
         .take-info {
             padding: 15px;
         }
@@ -492,11 +557,13 @@
                         </div>
                         <div class="trim-controls" id="trim-${cardId}">
                             <div class="trim-info">
-                                <span class="icon-small">✂️</span> Drag markers to trim
+                                <span class="icon-small">✂️</span> Drag markers or use buttons to trim
                             </div>
+                            
                             <div class="waveform-container">
                                 <canvas class="waveform-canvas" id="waveform-${cardId}"></canvas>
                             </div>
+                            
                             <div class="timeline" id="timeline-${cardId}">
                                 <div class="timeline-fill" id="fill-${cardId}"></div>
                                 <div class="trim-marker start" id="start-${cardId}" 
@@ -504,9 +571,34 @@
                                 <div class="trim-marker end" id="end-${cardId}" 
                                      onmousedown="startDrag(event, '${cardId}', 'end')"></div>
                             </div>
+                            
                             <div class="time-display" id="time-${cardId}">
                                 <span>Start: <strong>0.00s</strong></span>
+                                <span>Duration: <strong>0.00s</strong></span>
                                 <span>End: <strong>0.00s</strong></span>
+                            </div>
+                            
+                            <div class="quick-adjustments">
+                                <span class="adjust-label">Start:</span>
+                                <button class="trim-btn trim-btn-adjust" onclick="adjustTrim('${cardId}', 'start', -1)">-1s</button>
+                                <button class="trim-btn trim-btn-adjust" onclick="adjustTrim('${cardId}', 'start', -0.1)">-0.1s</button>
+                                <button class="trim-btn trim-btn-adjust" onclick="adjustTrim('${cardId}', 'start', 0.1)">+0.1s</button>
+                                <button class="trim-btn trim-btn-adjust" onclick="adjustTrim('${cardId}', 'start', 1)">+1s</button>
+                                
+                                <span class="adjust-label" style="margin-left: 15px;">End:</span>
+                                <button class="trim-btn trim-btn-adjust" onclick="adjustTrim('${cardId}', 'end', -1)">-1s</button>
+                                <button class="trim-btn trim-btn-adjust" onclick="adjustTrim('${cardId}', 'end', -0.1)">-0.1s</button>
+                                <button class="trim-btn trim-btn-adjust" onclick="adjustTrim('${cardId}', 'end', 0.1)">+0.1s</button>
+                                <button class="trim-btn trim-btn-adjust" onclick="adjustTrim('${cardId}', 'end', 1)">+1s</button>
+                            </div>
+                            
+                            <div class="trim-actions">
+                                <button class="trim-btn trim-btn-play" onclick="playTrimmed('${cardId}')">
+                                    <span class="icon-small">▶️</span> Play Trimmed Clip
+                                </button>
+                                <button class="trim-btn trim-btn-reset" onclick="resetTrim('${cardId}', ${data.line_number}, '${match.video_name}')">
+                                    <span class="icon-small">↺</span> Reset
+                                </button>
                             </div>
                         </div>
                         <div class="take-info">
@@ -861,6 +953,74 @@
                     <span>End: <strong>${trim.end.toFixed(2)}s</strong></span>
                 `;
             }
+        }
+
+        function adjustTrim(cardId, marker, amount) {
+            // Get line and video info
+            const matches = cardId.match(/card-(\d+)-(\d+)/);
+            if (!matches) return;
+            
+            const lineNum = parseInt(matches[1]);
+            const card = document.getElementById(cardId);
+            const videoNameEl = card.querySelector('.video-name');
+            const videoName = videoNameEl.textContent;
+            const video = document.getElementById(`video-${cardId}`);
+            const duration = video.duration;
+            
+            if (!trimData[lineNum]?.[videoName]) return;
+            
+            const trim = trimData[lineNum][videoName];
+            
+            if (marker === 'start') {
+                trim.start = Math.max(0, Math.min(trim.start + amount, trim.end - 0.1));
+                video.currentTime = trim.start;
+            } else {
+                trim.end = Math.min(duration, Math.max(trim.end + amount, trim.start + 0.1));
+                video.currentTime = trim.end;
+            }
+            
+            updateTrimDisplay(cardId, lineNum, videoName);
+        }
+
+        function playTrimmed(cardId) {
+            const video = document.getElementById(`video-${cardId}`);
+            const matches = cardId.match(/card-(\d+)-(\d+)/);
+            if (!matches) return;
+            
+            const lineNum = parseInt(matches[1]);
+            const card = document.getElementById(cardId);
+            const videoNameEl = card.querySelector('.video-name');
+            const videoName = videoNameEl.textContent;
+            
+            const trim = trimData[lineNum]?.[videoName];
+            if (!trim) return;
+            
+            // Set video to start position and play
+            video.currentTime = trim.start;
+            video.play();
+            
+            // Stop at end position
+            const checkTime = setInterval(() => {
+                if (video.currentTime >= trim.end) {
+                    video.pause();
+                    clearInterval(checkTime);
+                }
+            }, 100);
+            
+            // Clear interval if video is paused manually
+            video.addEventListener('pause', () => clearInterval(checkTime), { once: true });
+        }
+
+        function resetTrim(cardId, lineNum, videoName) {
+            const video = document.getElementById(`video-${cardId}`);
+            const duration = video.duration;
+            
+            // Reset trim to full video
+            if (!trimData[lineNum]) trimData[lineNum] = {};
+            trimData[lineNum][videoName] = { start: 0, end: duration };
+            
+            updateTrimDisplay(cardId, lineNum, videoName);
+            video.currentTime = 0;
         }
 
         async function selectTake(lineNum, videoName, card) {
