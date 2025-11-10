@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Flask
+instance/
+.webassets-cache
+
+# Video files (large files - don't commit to GitHub)
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.avi
+*.mkv
+*.webm
+*.m4v
+
+# Audio files
+*.mp3
+*.wav
+*.m4a
+*.flac
+*.aac
+
+# Output directories
+output/
+ordered_videos/
+transcriptions/
+temp_segments/
+temp_segments_ui/
+temp_segments_interactive/
+text_video/
+totranscribe/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+

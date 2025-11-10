@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Take Selector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        h1 .icon {
+            font-size: 0.7em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .icon-small {
+            font-size: 0.85em;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 10px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .line-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+        }
+
+        .line-number {
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .script-text {
+            font-size: 1.3em;
+            color: #333;
+            font-style: italic;
+            line-height: 1.6;
+        }
+
+        .takes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .take-card {
+            background: white;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .take-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .take-card.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 177.78%; /* 9:16 aspect ratio */
+            background: #000;
+        }
+
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .trim-controls {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-top: 2px solid #e0e0e0;
+            display: none;
+        }
+
+        .take-card.selected .trim-controls {
+            display: block;
+        }
+
+        .waveform-container {
+            position: relative;
+            height: 60px;
+            background: #2a2a3a;
+            border-radius: 5px;
+            margin: 10px 0 5px 0;
+            overflow: hidden;
+        }
+
+        .waveform-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .timeline {
+            position: relative;
+            height: 40px;
+            background: #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: visible;
+        }
+
+        .timeline-fill {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+            pointer-events: none;
+        }
+
+        .trim-marker {
+            position: absolute;
+            width: 20px;
+            height: 50px;
+            top: -5px;
+            background: #667eea;
+            border: 2px solid white;
+            border-radius: 5px;
+            cursor: ew-resize;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .trim-marker:hover {
+            background: #764ba2;
+            transform: scale(1.1);
+        }
+
+        .trim-marker.start {
+            left: 0;
+        }
+
+        .trim-marker.end {
+            right: 0;
+        }
+
+        .trim-marker::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 3px;
+            height: 20px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .trim-info {
+            text-align: center;
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .take-info {
+            padding: 15px;
+        }
+
+        .take-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .video-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 1em;
+        }
+
+        .confidence {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .confidence.high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .preview-text {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-prev {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-prev:hover:not(:disabled) {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-skip {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-skip:hover:not(:disabled) {
+            background: #ffb300;
+            transform: translateY(-2px);
+        }
+
+        .btn-finish {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-finish:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(56, 239, 125, 0.4);
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            font-size: 1.2em;
+            padding: 20px 50px;
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-size: 1.1em;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-matches {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="icon">🎬</span> Video Take Selector</h1>
+        <p class="subtitle">Choose the best take for each line of your script</p>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading script and videos...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLine = 1;
+        let totalLines = 0;
+        let selections = {};
+        let trimData = {}; // Store {lineNum: {videoName: {start: 0, end: duration}}}
+
+        async function initialize() {
+            try {
+                const response = await fetch('/api/initialize', { method: 'POST' });
+                const data = await response.json();
+                totalLines = data.total_lines;
+                loadLine(currentLine);
+            } catch (error) {
+                document.getElementById('content').innerHTML = `
+                    <div class="status error">
+                        Error initializing: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function loadLine(lineNum) {
+            try {
+                const response = await fetch(`/api/line/${lineNum}`);
+                const data = await response.json();
+                
+                updateProgress();
+                renderLine(data);
+            } catch (error) {
+                document.getElementById('content').innerHTML = `
+                    <div class="status error">
+                        Error loading line: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function renderLine(data) {
+            const content = document.getElementById('content');
+            
+            if (data.matches.length === 0) {
+                content.innerHTML = `
+                    <div class="line-info">
+                        <div class="line-number">Line ${data.line_number} of ${totalLines}</div>
+                        <div class="script-text">"${data.script_line}"</div>
+                    </div>
+                    <div class="no-matches">
+                        <span class="icon-small">😔</span> No matching videos found for this line.
+                    </div>
+                    <div class="controls">
+                        <button class="btn-prev" onclick="prevLine()" ${currentLine <= 1 ? 'disabled' : ''}>
+                            <span class="icon-small">←</span> Previous
+                        </button>
+                        <button class="btn-skip" onclick="skipLine()">
+                            <span class="icon-small">⏭</span> Skip
+                        </button>
+                        <button class="btn-next" onclick="nextLine()">
+                            Next <span class="icon-small">→</span>
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            let takesHtml = '';
+            data.matches.forEach((match, index) => {
+                const confidenceClass = match.score >= 0.8 ? 'high' : match.score >= 0.6 ? 'medium' : 'low';
+                const confidenceText = match.score >= 0.8 ? '<span class="icon-small">✅</span> Excellent' : match.score >= 0.6 ? '<span class="icon-small">⚠️</span> Good' : '<span class="icon-small">❓</span> Fair';
+                const isSelected = selections[data.line_number] === match.video_name;
+                const cardId = `card-${data.line_number}-${index}`;
+                
+                takesHtml += `
+                    <div class="take-card ${isSelected ? 'selected' : ''}" id="${cardId}" onclick="selectTake(${data.line_number}, '${match.video_name}', this)">
+                        <div class="video-container">
+                            <video id="video-${cardId}" src="${match.video_url}" controls preload="metadata" 
+                                   onloadedmetadata="initTrimControls('${cardId}', ${data.line_number}, '${match.video_name}')"></video>
+                        </div>
+                        <div class="trim-controls" id="trim-${cardId}">
+                            <div class="trim-info">
+                                <span class="icon-small">✂️</span> Drag markers to trim
+                            </div>
+                            <div class="waveform-container">
+                                <canvas class="waveform-canvas" id="waveform-${cardId}"></canvas>
+                            </div>
+                            <div class="timeline" id="timeline-${cardId}">
+                                <div class="timeline-fill" id="fill-${cardId}"></div>
+                                <div class="trim-marker start" id="start-${cardId}" 
+                                     onmousedown="startDrag(event, '${cardId}', 'start')"></div>
+                                <div class="trim-marker end" id="end-${cardId}" 
+                                     onmousedown="startDrag(event, '${cardId}', 'end')"></div>
+                            </div>
+                            <div class="time-display" id="time-${cardId}">
+                                <span>Start: <strong>0.00s</strong></span>
+                                <span>End: <strong>0.00s</strong></span>
+                            </div>
+                        </div>
+                        <div class="take-info">
+                            <div class="take-header">
+                                <span class="video-name">${match.video_name}</span>
+                                <span class="confidence ${confidenceClass}">${confidenceText} (${Math.round(match.score * 100)}%)</span>
+                            </div>
+                            <div class="preview-text">"${match.preview}..."</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const canGenerate = Object.keys(selections).length === totalLines;
+            const hasSelections = Object.keys(selections).length > 0;
+
+            content.innerHTML = `
+                <div class="line-info">
+                    <div class="line-number">Line ${data.line_number} of ${totalLines}</div>
+                    <div class="script-text">"${data.script_line}"</div>
+                </div>
+
+                <div class="takes-grid">
+                    ${takesHtml}
+                </div>
+
+                <div class="controls">
+                    <button class="btn-prev" onclick="prevLine()" ${currentLine <= 1 ? 'disabled' : ''}>
+                        <span class="icon-small">←</span> Previous
+                    </button>
+                    <button class="btn-skip" onclick="skipLine()">
+                        <span class="icon-small">⏭</span> Skip
+                    </button>
+                    <button class="btn-next" onclick="nextLine()" ${currentLine >= totalLines ? 'disabled' : ''}>
+                        Next <span class="icon-small">→</span>
+                    </button>
+                </div>
+
+                ${hasSelections ? `
+                    <div class="controls" style="margin-top: 20px;">
+                        <button class="btn-finish" onclick="generateVideo()" ${!hasSelections ? 'disabled' : ''}>
+                            <span class="icon-small">⚡</span> Finish Now (${Object.keys(selections).length} selected)
+                        </button>
+                    </div>
+                ` : ''}
+
+                ${canGenerate ? `
+                    <div class="status success">
+                        <span class="icon-small">🎉</span> All lines selected! Ready to generate your video.
+                    </div>
+                    <div class="controls">
+                        <button class="btn-generate" onclick="generateVideo()">
+                            <span class="icon-small">🎬</span> Generate Final Video
+                        </button>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        async function selectTake(lineNum, videoName, card) {
+            selections[lineNum] = videoName;
+            
+            // Update UI
+            document.querySelectorAll('.take-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            
+            // Save selection
+            await fetch('/api/select', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ line_number: lineNum, video_name: videoName })
+            });
+            
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const progress = (Object.keys(selections).length / totalLines) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+
+        function skipLine() {
+            // Just move to next line without selecting
+            nextLine();
+        }
+
+        function nextLine() {
+            if (currentLine < totalLines) {
+                currentLine++;
+                loadLine(currentLine);
+            }
+        }
+
+        function prevLine() {
+            if (currentLine > 1) {
+                currentLine--;
+                loadLine(currentLine);
+            }
+        }
+
+        async function generateVideo() {
+            const selectedCount = Object.keys(selections).length;
+            
+            if (selectedCount === 0) {
+                alert('Please select at least one take!');
+                return;
+            }
+
+            if (selectedCount < totalLines) {
+                const confirm = window.confirm(
+                    `You've only selected ${selectedCount} out of ${totalLines} lines.\n\n` +
+                    `Do you want to generate the video with just these ${selectedCount} segments?\n\n` +
+                    `(Click Cancel to continue selecting more takes)`
+                );
+                if (!confirm) return;
+            }
+
+            document.getElementById('content').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Generating your video... This may take a few minutes.</p>
+                    <p style="color: #666; margin-top: 10px;">Processing ${selectedCount} segment${selectedCount > 1 ? 's' : ''}...</p>
+                </div>
+            `;
+
+            try {
+                await fetch('/api/generate', { method: 'POST' });
+                
+                // Poll for completion
+                checkStatus();
+            } catch (error) {
+                document.getElementById('content').innerHTML = `
+                    <div class="status error">
+                        Error generating video: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function checkStatus() {
+            const response = await fetch('/api/status');
+            const data = await response.json();
+            
+            if (data.processing) {
+                setTimeout(checkStatus, 2000);
+            } else {
+                document.getElementById('content').innerHTML = `
+                    <div class="status success">
+                        <span class="icon-small">✅</span> Video generated successfully!
+                        <br><br>
+                        <strong>final_script_video_ui.mp4</strong> has been created in your project folder.
+                    </div>
+                    <div class="controls">
+                        <button class="btn-generate" onclick="location.reload()">
+                            <span class="icon-small">🔄</span> Start Over
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Trim controls functionality
+        let dragState = null;
+
+        function initTrimControls(cardId, lineNum, videoName) {
+            const video = document.getElementById(`video-${cardId}`);
+            const duration = video.duration;
+            
+            // Initialize trim data if not exists
+            if (!trimData[lineNum]) trimData[lineNum] = {};
+            if (!trimData[lineNum][videoName]) {
+                trimData[lineNum][videoName] = { start: 0, end: duration };
+            }
+            
+            updateTrimDisplay(cardId, lineNum, videoName);
+            
+            // Generate waveform when video is selected
+            const card = document.getElementById(cardId);
+            if (card.classList.contains('selected')) {
+                generateWaveform(cardId);
+            }
+        }
+
+        async function generateWaveform(cardId) {
+            const video = document.getElementById(`video-${cardId}`);
+            const canvas = document.getElementById(`waveform-${cardId}`);
+            if (!canvas || !video) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth * 2; // Retina display support
+            canvas.height = canvas.offsetHeight * 2;
+            ctx.scale(2, 2);
+            
+            const displayWidth = canvas.width / 2;
+            const displayHeight = canvas.height / 2;
+            
+            try {
+                // Create audio context
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Fetch audio data
+                const response = await fetch(video.src);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // Get audio data
+                const rawData = audioBuffer.getChannelData(0);
+                const samples = 300; // Number of bars to display
+                const blockSize = Math.floor(rawData.length / samples);
+                const filteredData = [];
+                
+                for (let i = 0; i < samples; i++) {
+                    let blockStart = blockSize * i;
+                    let sum = 0;
+                    for (let j = 0; j < blockSize; j++) {
+                        sum += Math.abs(rawData[blockStart + j]);
+                    }
+                    filteredData.push(sum / blockSize);
+                }
+                
+                // Normalize data
+                const multiplier = Math.pow(Math.max(...filteredData), -1);
+                const normalizedData = filteredData.map(n => n * multiplier);
+                
+                // Draw waveform
+                const barWidth = displayWidth / samples;
+                const barGap = 1;
+                
+                ctx.clearRect(0, 0, displayWidth, displayHeight);
+                
+                normalizedData.forEach((value, i) => {
+                    const barHeight = value * displayHeight * 0.8;
+                    const x = i * barWidth;
+                    const y = (displayHeight - barHeight) / 2;
+                    
+                    // Gradient from purple to blue
+                    const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+                    gradient.addColorStop(0, '#667eea');
+                    gradient.addColorStop(1, '#764ba2');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, y, barWidth - barGap, barHeight);
+                });
+                
+                audioContext.close();
+            } catch (error) {
+                console.error('Error generating waveform:', error);
+                // Draw simple placeholder bars if waveform fails
+                ctx.fillStyle = '#667eea';
+                for (let i = 0; i < 50; i++) {
+                    const x = (i * displayWidth) / 50;
+                    const height = Math.random() * displayHeight * 0.6 + displayHeight * 0.2;
+                    const y = (displayHeight - height) / 2;
+                    ctx.fillRect(x, y, (displayWidth / 50) - 2, height);
+                }
+            }
+        }
+
+        function startDrag(event, cardId, markerType) {
+            event.stopPropagation();
+            const timeline = document.getElementById(`timeline-${cardId}`);
+            const rect = timeline.getBoundingClientRect();
+            
+            dragState = {
+                cardId,
+                markerType,
+                timelineRect: rect,
+                timelineWidth: rect.width
+            };
+            
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function onDrag(event) {
+            if (!dragState) return;
+            
+            const { cardId, markerType, timelineRect, timelineWidth } = dragState;
+            const video = document.getElementById(`video-${cardId}`);
+            const duration = video.duration;
+            
+            // Calculate position relative to timeline
+            let x = event.clientX - timelineRect.left;
+            x = Math.max(0, Math.min(x, timelineWidth));
+            
+            const percent = x / timelineWidth;
+            const time = percent * duration;
+            
+            // Get line and video info from card
+            const matches = cardId.match(/card-(\d+)-(\d+)/);
+            if (!matches) return;
+            
+            const lineNum = parseInt(matches[1]);
+            const videoIndex = parseInt(matches[2]);
+            
+            // Get video name from the card
+            const card = document.getElementById(cardId);
+            const videoNameEl = card.querySelector('.video-name');
+            const videoName = videoNameEl.textContent;
+            
+            if (!trimData[lineNum]) trimData[lineNum] = {};
+            if (!trimData[lineNum][videoName]) {
+                trimData[lineNum][videoName] = { start: 0, end: duration };
+            }
+            
+            const trim = trimData[lineNum][videoName];
+            
+            if (markerType === 'start') {
+                trim.start = Math.min(time, trim.end - 0.1);
+            } else {
+                trim.end = Math.max(time, trim.start + 0.1);
+            }
+            
+            updateTrimDisplay(cardId, lineNum, videoName);
+            
+            // Update video current time to show trim
+            video.currentTime = markerType === 'start' ? trim.start : trim.end;
+        }
+
+        function endDrag() {
+            dragState = null;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', endDrag);
+        }
+
+        function updateTrimDisplay(cardId, lineNum, videoName) {
+            const video = document.getElementById(`video-${cardId}`);
+            const duration = video.duration;
+            const trim = trimData[lineNum]?.[videoName] || { start: 0, end: duration };
+            
+            const startPercent = (trim.start / duration) * 100;
+            const endPercent = (trim.end / duration) * 100;
+            
+            // Update markers
+            const startMarker = document.getElementById(`start-${cardId}`);
+            const endMarker = document.getElementById(`end-${cardId}`);
+            const fill = document.getElementById(`fill-${cardId}`);
+            
+            if (startMarker) startMarker.style.left = `${startPercent}%`;
+            if (endMarker) endMarker.style.left = `${endPercent}%`;
+            if (fill) {
+                fill.style.left = `${startPercent}%`;
+                fill.style.width = `${endPercent - startPercent}%`;
+            }
+            
+            // Update time display
+            const timeDisplay = document.getElementById(`time-${cardId}`);
+            if (timeDisplay) {
+                timeDisplay.innerHTML = `
+                    <span>Start: <strong>${trim.start.toFixed(2)}s</strong></span>
+                    <span>Duration: <strong>${(trim.end - trim.start).toFixed(2)}s</strong></span>
+                    <span>End: <strong>${trim.end.toFixed(2)}s</strong></span>
+                `;
+            }
+        }
+
+        async function selectTake(lineNum, videoName, card) {
+            selections[lineNum] = videoName;
+            
+            // Update UI
+            document.querySelectorAll('.take-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            
+            // Generate waveform for the selected card
+            const cardId = card.id;
+            setTimeout(() => generateWaveform(cardId), 100);
+            
+            // Get trim data for this selection
+            const trimInfo = trimData[lineNum]?.[videoName];
+            
+            // Save selection with trim data
+            await fetch('/api/select', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    line_number: lineNum, 
+                    video_name: videoName,
+                    trim: trimInfo 
+                })
+            });
+            
+            updateProgress();
+        }
+
+        // Initialize on page load
+        initialize();
+    </script>
+</body>
+</html>
+
