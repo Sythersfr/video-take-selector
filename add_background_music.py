@@ -124,13 +124,12 @@ def add_background_music(
             '-filter_complex',
             f"[1:a]{music_filter}[music];"  # Process music
             f"[0:a]{dialogue_filter}[dialogue];"  # Process dialogue
-            f"[music][dialogue]amerge=inputs=2[aout]",  # Merge both
+            f"[dialogue][music]amix=inputs=2:duration=first:dropout_transition=0[aout]",  # Mix both (dialogue first to prioritize)
             '-map', '0:v',  # Use video from input 0
-            '-map', '[aout]',  # Use merged audio
+            '-map', '[aout]',  # Use mixed audio
             '-c:v', 'copy',  # Copy video (no re-encoding)
             '-c:a', 'aac',  # Encode audio as AAC
             '-b:a', '192k',  # Audio bitrate
-            '-ac', '2',  # Stereo
             '-shortest',  # Stop when shortest input ends
             '-y',
             str(output_path)
@@ -199,13 +198,12 @@ def add_background_music_simple(
         f"[1:a]aloop=loop=-1:size=2e+09,volume={music_volume},"
         f"afade=t=in:st=0:d=2,afade=t=out:st={video_duration-3}:d=3[music];"
         f"[0:a]volume=1.0[dialogue];"
-        f"[music][dialogue]amerge=inputs=2[aout]",
+        f"[dialogue][music]amix=inputs=2:duration=first:dropout_transition=0[aout]",
         '-map', '0:v',
         '-map', '[aout]',
         '-c:v', 'copy',
         '-c:a', 'aac',
         '-b:a', '192k',
-        '-ac', '2',
         '-shortest',
         '-y',
         str(output_path)

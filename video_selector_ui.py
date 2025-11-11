@@ -133,12 +133,14 @@ def get_video_duration(video_path: str) -> float:
 
 
 def extract_video_segment(video_path: str, start_time: float, end_time: float, output_path: str):
-    """Extract a segment from video."""
+    """Extract a segment from video with audio normalization."""
     duration = end_time - start_time
     
+    # Use loudnorm filter to normalize audio levels to -16 LUFS (standard for video)
     cmd = [
         'ffmpeg', '-ss', str(start_time), '-i', str(video_path), '-t', str(duration),
-        '-c:v', 'libx264', '-preset', 'medium', '-crf', '18',
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23',
+        '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',  # Audio normalization
         '-c:a', 'aac', '-b:a', '192k', '-ar', '48000',
         '-movflags', '+faststart', '-pix_fmt', 'yuv420p', '-y', str(output_path)
     ]
@@ -147,15 +149,37 @@ def extract_video_segment(video_path: str, start_time: float, end_time: float, o
 
 
 def concatenate_videos(video_paths: list, output_path: str):
-    """Concatenate multiple videos into one."""
+    """Concatenate multiple videos with proper sync (optimized for speed)."""
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
         for video_path in video_paths:
             f.write(f"file '{Path(video_path).absolute()}'\n")
         list_file = f.name
     
     try:
-        cmd = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', list_file,
-               '-c', 'copy', '-movflags', '+faststart', '-y', str(output_path)]
+        # Re-encode to fix sync issues - ensures constant framerate and timestamps
+        cmd = [
+            'ffmpeg',
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', list_file,
+            # Video encoding with constant framerate (fast preset for speed)
+            '-c:v', 'libx264',
+            '-preset', 'veryfast',
+            '-crf', '23',
+            '-r', '24',  # Force constant 24fps
+            '-vsync', 'cfr',  # Constant frame rate (critical for sync)
+            # Audio normalization and encoding
+            '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',  # Normalize overall audio
+            '-c:a', 'aac',
+            '-b:a', '192k',
+            '-ar', '48000',  # Consistent sample rate
+            '-async', '1',  # Audio sync correction
+            # Output settings
+            '-movflags', '+faststart',
+            '-pix_fmt', 'yuv420p',
+            '-y',
+            str(output_path)
+        ]
         subprocess.run(cmd, capture_output=True, check=True)
     finally:
         Path(list_file).unlink()
@@ -353,6 +377,35 @@ def get_status():
         'selections': current_state['selections'],
         'total_lines': len(current_state['script_lines'])
     })
+
+
+@app.route('/api/save_session', methods=['POST'])
+def save_session():
+    """Save current selections and trim data to a file."""
+    try:
+        from datetime import datetime
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'session_{timestamp}.json'
+        
+        session_data = {
+            'timestamp': timestamp,
+            'selections': current_state['selections'],
+            'trim_data': current_state['trim_data'],
+            'total_lines': len(current_state['script_lines']),
+            'selected_count': len(current_state['selections'])
+        }
+        
+        with open(filename, 'w') as f:
+            json.dump(session_data, f, indent=2)
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'message': f'Session saved to {filename}'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':

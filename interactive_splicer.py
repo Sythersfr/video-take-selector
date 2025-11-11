@@ -121,12 +121,14 @@ def get_transcription_text(output_dir: str) -> str:
 
 
 def extract_video_segment(video_path: str, start_time: float, end_time: float, output_path: str):
-    """Extract a segment from video with re-encoding for smooth playback."""
+    """Extract a segment from video with audio normalization."""
     duration = end_time - start_time
     
+    # Use loudnorm filter to normalize audio levels to -16 LUFS (standard for video)
     cmd = [
         'ffmpeg', '-ss', str(start_time), '-i', str(video_path), '-t', str(duration),
-        '-c:v', 'libx264', '-preset', 'medium', '-crf', '18',
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23',
+        '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',  # Audio normalization
         '-c:a', 'aac', '-b:a', '192k', '-ar', '48000',
         '-movflags', '+faststart', '-pix_fmt', 'yuv420p', '-y', str(output_path)
     ]
@@ -135,15 +137,37 @@ def extract_video_segment(video_path: str, start_time: float, end_time: float, o
 
 
 def concatenate_videos(video_paths: list, output_path: str):
-    """Concatenate multiple videos into one."""
+    """Concatenate multiple videos with perfect audio/video sync (optimized for speed)."""
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
         for video_path in video_paths:
             f.write(f"file '{Path(video_path).absolute()}'\n")
         list_file = f.name
     
     try:
-        cmd = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', list_file,
-               '-c', 'copy', '-movflags', '+faststart', '-y', str(output_path)]
+        # Re-encode to prevent audio drift and sync issues
+        cmd = [
+            'ffmpeg',
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', list_file,
+            # Video encoding with constant framerate (fast preset)
+            '-c:v', 'libx264',
+            '-preset', 'veryfast',
+            '-crf', '23',
+            '-r', '24',  # Force constant 24fps
+            '-vsync', 'cfr',  # Constant frame rate (fixes drift)
+            # Audio normalization and encoding
+            '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',  # Normalize overall audio
+            '-c:a', 'aac',
+            '-b:a', '192k',
+            '-ar', '48000',  # Consistent sample rate
+            '-async', '1',  # Audio sync correction
+            # Output settings
+            '-movflags', '+faststart',
+            '-pix_fmt', 'yuv420p',
+            '-y',
+            str(output_path)
+        ]
         subprocess.run(cmd, capture_output=True, check=True)
     finally:
         Path(list_file).unlink()

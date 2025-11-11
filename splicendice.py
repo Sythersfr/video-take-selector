@@ -90,7 +90,7 @@ def get_video_duration(video_path: str) -> float:
 
 
 def extract_video_segment(video_path: str, start_time: float, end_time: float, output_path: str):
-    """Extract a segment from video using ffmpeg with re-encoding for smooth playback."""
+    """Extract a segment from video with audio normalization."""
     duration = end_time - start_time
     
     cmd = [
@@ -98,10 +98,11 @@ def extract_video_segment(video_path: str, start_time: float, end_time: float, o
         '-ss', str(start_time),  # Seek before input for faster processing
         '-i', str(video_path),
         '-t', str(duration),
-        # Re-encode with consistent settings for smooth playback
+        # Re-encode with fast settings for speed
         '-c:v', 'libx264',  # H.264 video codec
-        '-preset', 'medium',  # Balance between speed and quality
-        '-crf', '18',  # High quality (lower = better, 18 is visually lossless)
+        '-preset', 'ultrafast',  # Faster encoding
+        '-crf', '23',  # Good quality, faster encoding
+        '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',  # Audio normalization
         '-c:a', 'aac',  # AAC audio codec
         '-b:a', '192k',  # Audio bitrate
         '-ar', '48000',  # Audio sample rate
@@ -115,7 +116,7 @@ def extract_video_segment(video_path: str, start_time: float, end_time: float, o
 
 
 def concatenate_videos(video_paths: list, output_path: str):
-    """Concatenate multiple videos into one with smooth transitions."""
+    """Concatenate multiple videos with perfect audio/video sync (optimized for speed)."""
     # Create a temporary file list for ffmpeg
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
         for video_path in video_paths:
@@ -123,15 +124,27 @@ def concatenate_videos(video_paths: list, output_path: str):
         list_file = f.name
     
     try:
-        # Since all segments are now re-encoded with consistent settings,
-        # we can safely use copy mode for fast concatenation
+        # Re-encode to prevent audio drift and sync issues
         cmd = [
             'ffmpeg',
             '-f', 'concat',
             '-safe', '0',
             '-i', list_file,
-            '-c', 'copy',  # Copy since all segments have matching codecs now
-            '-movflags', '+faststart',  # Optimize for playback
+            # Video encoding with constant framerate (fast preset)
+            '-c:v', 'libx264',
+            '-preset', 'veryfast',
+            '-crf', '23',
+            '-r', '24',  # Force constant 24fps
+            '-vsync', 'cfr',  # Constant frame rate (fixes drift)
+            # Audio normalization and encoding
+            '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',  # Normalize overall audio
+            '-c:a', 'aac',
+            '-b:a', '192k',
+            '-ar', '48000',  # Consistent sample rate
+            '-async', '1',  # Audio sync correction
+            # Output settings
+            '-movflags', '+faststart',
+            '-pix_fmt', 'yuv420p',
             '-y',
             str(output_path)
         ]

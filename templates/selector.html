@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Take Selector</title>
+    <title>script2sequence</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,26 +14,33 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
             min-height: 100vh;
-            padding: 20px;
+            padding: 30px 20px;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 50px 40px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
         }
 
         h1 {
             text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            font-size: 3.5em;
+            font-weight: 700;
+            letter-spacing: -0.03em;
         }
 
         h1 .icon {
@@ -40,83 +49,101 @@
 
         .subtitle {
             text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.1em;
+            color: #6b7280;
+            margin-bottom: 40px;
+            font-size: 1.15em;
+            font-weight: 500;
         }
 
         .icon-small {
-            font-size: 0.85em;
+            font-size: 0.9em;
         }
 
         .progress-bar {
-            background: #e0e0e0;
-            height: 10px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            background: linear-gradient(to right, #f3f4f6, #e5e7eb);
+            height: 8px;
+            border-radius: 20px;
+            margin-bottom: 40px;
             overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .progress-fill {
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             height: 100%;
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
         }
 
         .line-info {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            border-left: 5px solid #667eea;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            padding: 35px;
+            border-radius: 16px;
+            margin-bottom: 35px;
+            border-left: 5px solid;
+            border-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) 1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .line-number {
-            font-size: 0.9em;
+            font-size: 0.8em;
             color: #667eea;
-            font-weight: bold;
-            margin-bottom: 10px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
         }
 
         .script-text {
-            font-size: 1.3em;
-            color: #333;
+            font-size: 1.45em;
+            color: #1f2937;
             font-style: italic;
-            line-height: 1.6;
+            line-height: 1.7;
+            font-weight: 500;
         }
 
         .takes-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 28px;
+            margin-bottom: 40px;
         }
 
         .take-card {
             background: white;
-            border: 3px solid #e0e0e0;
-            border-radius: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .take-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.25);
+            border-color: #667eea;
         }
 
         .take-card.selected {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.35), 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: linear-gradient(to bottom, #ffffff, #f9fafb);
+        }
+
+        .take-card.hovered-for-io {
+            border-color: #f59e0b;
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25), 0 0 0 3px rgba(245, 158, 11, 0.15);
         }
 
         .video-container {
             position: relative;
             width: 100%;
-            padding-top: 177.78%; /* 9:16 aspect ratio */
-            background: #000;
+            height: 300px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px 16px 0 0;
+            overflow: hidden;
         }
 
         .video-container video {
@@ -126,12 +153,31 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .video-container:hover video {
+            opacity: 0.95;
+        }
+
+        .hover-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0;
+            pointer-events: none;
+            z-index: 5;
+            transition: width 0.1s ease;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.6);
         }
 
         .trim-controls {
-            padding: 10px 15px;
-            background: #f8f9fa;
-            border-top: 2px solid #e0e0e0;
+            padding: 25px;
+            background: linear-gradient(to bottom, #f9fafb, #ffffff);
+            border-top: 2px solid #e5e7eb;
             display: none;
         }
 
@@ -141,11 +187,12 @@
 
         .waveform-container {
             position: relative;
-            height: 60px;
-            background: #2a2a3a;
-            border-radius: 5px;
-            margin: 10px 0 5px 0;
+            height: 70px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 12px;
+            margin: 12px 0 8px 0;
             overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         .waveform-canvas {
@@ -156,37 +203,39 @@
 
         .timeline {
             position: relative;
-            height: 40px;
-            background: #ddd;
-            border-radius: 5px;
-            margin: 10px 0;
+            height: 48px;
+            background: linear-gradient(to bottom, #e5e7eb, #d1d5db);
+            border-radius: 12px;
+            margin: 12px 0;
             overflow: visible;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .timeline-fill {
             position: absolute;
             height: 100%;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            border-radius: 5px;
+            border-radius: 12px;
             pointer-events: none;
+            opacity: 0.3;
         }
 
         .trim-marker {
             position: absolute;
             width: 20px;
-            height: 50px;
+            height: 58px;
             top: -5px;
-            background: #667eea;
-            border: 2px solid white;
-            border-radius: 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 3px solid white;
+            border-radius: 10px;
             cursor: ew-resize;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
             z-index: 10;
         }
 
         .trim-marker:hover {
-            background: #764ba2;
-            transform: scale(1.1);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.7);
         }
 
         .trim-marker.start {
@@ -203,75 +252,80 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 3px;
-            height: 20px;
+            width: 4px;
+            height: 24px;
             background: white;
-            border-radius: 2px;
+            border-radius: 4px;
         }
 
         .time-display {
             display: flex;
             justify-content: space-between;
-            font-size: 0.85em;
-            color: #666;
-            margin-top: 5px;
+            font-size: 0.8em;
+            color: #6b7280;
+            margin-top: 8px;
+            font-weight: 600;
         }
 
         .trim-info {
             text-align: center;
             font-size: 0.9em;
             color: #667eea;
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-weight: 600;
+            margin-bottom: 12px;
         }
 
         .trim-actions {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
-            margin: 10px 0;
+            margin: 15px 0;
         }
 
         .trim-btn {
-            padding: 8px 16px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 0.9em;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .trim-btn-play {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .trim-btn-play:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
         }
 
         .trim-btn-reset {
-            background: #6c757d;
-            color: white;
+            background: #f3f4f6;
+            color: #4b5563;
         }
 
         .trim-btn-reset:hover {
-            background: #5a6268;
+            background: #e5e7eb;
+            transform: translateY(-1px);
         }
 
         .trim-btn-adjust {
-            background: #f8f9fa;
-            border: 2px solid #667eea;
+            background: white;
+            border: 2px solid #e5e7eb;
             color: #667eea;
-            padding: 6px 12px;
+            padding: 8px 16px;
             font-size: 0.85em;
         }
 
         .trim-btn-adjust:hover {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            border-color: transparent;
+            transform: translateY(-1px);
         }
 
         .quick-adjustments {
@@ -285,55 +339,85 @@
 
         .adjust-label {
             font-size: 0.85em;
-            color: #666;
-            font-weight: bold;
-            margin: 0 5px;
+            color: #6b7280;
+            font-weight: 600;
+            margin: 0 8px;
+        }
+
+        .keyboard-hints {
+            text-align: center;
+            padding: 24px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-radius: 16px;
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #4b5563;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .keyboard-hints kbd {
+            display: inline-block;
+            padding: 6px 12px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 0 4px;
+            font-size: 0.9em;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.15);
         }
 
         .take-info {
-            padding: 15px;
+            padding: 22px;
         }
 
         .take-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .video-name {
-            font-weight: bold;
-            color: #333;
+            font-weight: 700;
+            color: #1f2937;
             font-size: 1em;
         }
 
         .confidence {
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: bold;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .confidence.high {
-            background: #d4edda;
-            color: #155724;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
         }
 
         .confidence.medium {
-            background: #fff3cd;
-            color: #856404;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
         }
 
         .confidence.low {
-            background: #f8d7da;
-            color: #721c24;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
         }
 
         .preview-text {
             font-size: 0.9em;
-            color: #666;
+            color: #6b7280;
             font-style: italic;
-            line-height: 1.4;
+            line-height: 1.6;
         }
 
         .controls {
@@ -344,108 +428,136 @@
         }
 
         button {
-            padding: 15px 30px;
+            padding: 14px 32px;
             border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
-            font-weight: bold;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.02em;
         }
 
         .btn-prev {
-            background: #6c757d;
-            color: white;
+            background: white;
+            color: #4b5563;
+            border: 2px solid #e5e7eb;
         }
 
         .btn-prev:hover:not(:disabled) {
-            background: #5a6268;
+            background: #f9fafb;
+            border-color: #667eea;
+            color: #667eea;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .btn-next {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .btn-next:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
         }
 
         .btn-skip {
-            background: #ffc107;
-            color: #333;
+            background: white;
+            color: #f59e0b;
+            border: 2px solid #f59e0b;
         }
 
         .btn-skip:hover:not(:disabled) {
-            background: #ffb300;
+            background: #f59e0b;
+            color: white;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
 
         .btn-finish {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .btn-finish:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(56, 239, 125, 0.4);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
         }
 
         .btn-generate {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
             color: white;
-            font-size: 1.2em;
-            padding: 20px 50px;
+            font-size: 1.15em;
+            padding: 18px 48px;
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
         }
 
         .btn-generate:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(236, 72, 153, 0.5);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-save:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5);
         }
 
         button:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
         }
 
         .status {
             text-align: center;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 10px;
-            font-size: 1.1em;
+            padding: 35px;
+            margin: 25px 0;
+            border-radius: 16px;
+            font-size: 1.05em;
+            font-weight: 500;
         }
 
         .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            border: 2px solid #93c5fd;
         }
 
         .status.success {
-            background: #d4edda;
-            color: #155724;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+            border: 2px solid #6ee7b7;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
         }
 
         .status.error {
-            background: #f8d7da;
-            color: #721c24;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+            border: 2px solid #fca5a5;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 80px 40px;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
+            border: 4px solid #e5e7eb;
             border-top: 4px solid #667eea;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            width: 60px;
+            height: 60px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 24px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
 
         @keyframes spin {
@@ -455,16 +567,19 @@
 
         .no-matches {
             text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 1.2em;
+            padding: 60px 40px;
+            color: #9ca3af;
+            font-size: 1.15em;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-radius: 16px;
+            border: 2px dashed #d1d5db;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1><span class="icon">🎬</span> Video Take Selector</h1>
-        <p class="subtitle">Choose the best take for each line of your script</p>
+        <h1>script2sequence</h1>
+        <p class="subtitle">Transform your script into a polished video sequence</p>
 
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
@@ -483,6 +598,8 @@
         let totalLines = 0;
         let selections = {};
         let trimData = {}; // Store {lineNum: {videoName: {start: 0, end: duration}}}
+        let hoverPositions = {}; // Track current hover position for each video
+        let hoveredCardId = null; // Track which card is currently being hovered
 
         async function initialize() {
             try {
@@ -551,9 +668,13 @@
                 
                 takesHtml += `
                     <div class="take-card ${isSelected ? 'selected' : ''}" id="${cardId}" onclick="selectTake(${data.line_number}, '${match.video_name}', this)">
-                        <div class="video-container">
-                            <video id="video-${cardId}" src="${match.video_url}" controls preload="metadata" 
+                        <div class="video-container" 
+                             onmouseenter="startHoverPreview('${cardId}')"
+                             onmouseleave="stopHoverPreview('${cardId}')"
+                             onmousemove="updateHoverPreview(event, '${cardId}')">
+                            <video id="video-${cardId}" src="${match.video_url}" preload="metadata" 
                                    onloadedmetadata="initTrimControls('${cardId}', ${data.line_number}, '${match.video_name}')"></video>
+                            <div class="hover-indicator" id="hover-${cardId}"></div>
                         </div>
                         <div class="trim-controls" id="trim-${cardId}">
                             <div class="trim-info">
@@ -637,10 +758,22 @@
                     </button>
                 </div>
 
+                <div class="keyboard-hints">
+                    <strong>💡 Keyboard Shortcuts:</strong> 
+                    Hover over videos to preview | 
+                    <kbd>I</kbd> Set trim start (hover to select & trim) | 
+                    <kbd>O</kbd> Set trim end at playback position | 
+                    <kbd>Space</kbd> Play/Pause selected | 
+                    <kbd>Enter</kbd> Next line
+                </div>
+
                 ${hasSelections ? `
                     <div class="controls" style="margin-top: 20px;">
+                        <button class="btn-save" onclick="saveSession()">
+                            <span class="icon-small">💾</span> Save Session (${Object.keys(selections).length} selected)
+                        </button>
                         <button class="btn-finish" onclick="generateVideo()" ${!hasSelections ? 'disabled' : ''}>
-                            <span class="icon-small">⚡</span> Finish Now (${Object.keys(selections).length} selected)
+                            <span class="icon-small">⚡</span> Finish Now
                         </button>
                     </div>
                 ` : ''}
@@ -650,29 +783,15 @@
                         <span class="icon-small">🎉</span> All lines selected! Ready to generate your video.
                     </div>
                     <div class="controls">
+                        <button class="btn-save" onclick="saveSession()">
+                            <span class="icon-small">💾</span> Save Session
+                        </button>
                         <button class="btn-generate" onclick="generateVideo()">
                             <span class="icon-small">🎬</span> Generate Final Video
                         </button>
                     </div>
                 ` : ''}
             `;
-        }
-
-        async function selectTake(lineNum, videoName, card) {
-            selections[lineNum] = videoName;
-            
-            // Update UI
-            document.querySelectorAll('.take-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            
-            // Save selection
-            await fetch('/api/select', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ line_number: lineNum, video_name: videoName })
-            });
-            
-            updateProgress();
         }
 
         function updateProgress() {
@@ -685,17 +804,31 @@
             nextLine();
         }
 
-        function nextLine() {
+        async function nextLine() {
+            // Save current line's trim data before navigating
+            await saveCurrentLineTrimData();
+            
             if (currentLine < totalLines) {
                 currentLine++;
                 loadLine(currentLine);
             }
         }
 
-        function prevLine() {
+        async function prevLine() {
+            // Save current line's trim data before navigating
+            await saveCurrentLineTrimData();
+            
             if (currentLine > 1) {
                 currentLine--;
                 loadLine(currentLine);
+            }
+        }
+
+        async function saveCurrentLineTrimData() {
+            // Save trim data for currently selected video on this line
+            const videoName = selections[currentLine];
+            if (videoName && trimData[currentLine]?.[videoName]) {
+                await saveTrimData(currentLine, videoName);
             }
         }
 
@@ -715,6 +848,9 @@
                 );
                 if (!confirm) return;
             }
+
+            // Save current line's trim data before generating
+            await saveCurrentLineTrimData();
 
             document.getElementById('content').innerHTML = `
                 <div class="loading">
@@ -757,6 +893,26 @@
                         </button>
                     </div>
                 `;
+            }
+        }
+
+        async function saveSession() {
+            if (Object.keys(selections).length === 0) {
+                alert('No selections to save yet!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/save_session', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✅ Session saved!\n\n${data.message}\n\nYou have ${Object.keys(selections).length} selection(s) saved.`);
+                } else {
+                    alert('Error saving session: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error saving session: ' + error.message);
             }
         }
 
@@ -830,17 +986,18 @@
                 ctx.clearRect(0, 0, displayWidth, displayHeight);
                 
                 normalizedData.forEach((value, i) => {
-                    const barHeight = value * displayHeight * 0.8;
+                    const barHeight = value * displayHeight * 0.85;
                     const x = i * barWidth;
                     const y = (displayHeight - barHeight) / 2;
                     
-                    // Gradient from purple to blue
+                    // Beautiful gradient from purple to pink
                     const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
                     gradient.addColorStop(0, '#667eea');
-                    gradient.addColorStop(1, '#764ba2');
+                    gradient.addColorStop(0.5, '#764ba2');
+                    gradient.addColorStop(1, '#ec4899');
                     
                     ctx.fillStyle = gradient;
-                    ctx.fillRect(x, y, barWidth - barGap, barHeight);
+                    ctx.fillRect(x, y, Math.max(barWidth - barGap, 1), barHeight);
                 });
                 
                 audioContext.close();
@@ -848,11 +1005,11 @@
                 console.error('Error generating waveform:', error);
                 // Draw simple placeholder bars if waveform fails
                 ctx.fillStyle = '#667eea';
-                for (let i = 0; i < 50; i++) {
-                    const x = (i * displayWidth) / 50;
+                for (let i = 0; i < 80; i++) {
+                    const x = (i * displayWidth) / 80;
                     const height = Math.random() * displayHeight * 0.6 + displayHeight * 0.2;
                     const y = (displayHeight - height) / 2;
-                    ctx.fillRect(x, y, (displayWidth / 50) - 2, height);
+                    ctx.fillRect(x, y, Math.max((displayWidth / 80) - 2, 1), height);
                 }
             }
         }
@@ -919,6 +1076,19 @@
         }
 
         function endDrag() {
+            if (dragState) {
+                // Save trim data to server when drag ends
+                const { cardId } = dragState;
+                const matches = cardId.match(/card-(\d+)-(\d+)/);
+                if (matches) {
+                    const lineNum = parseInt(matches[1]);
+                    const card = document.getElementById(cardId);
+                    const videoNameEl = card.querySelector('.video-name');
+                    const videoName = videoNameEl.textContent;
+                    saveTrimData(lineNum, videoName);
+                }
+            }
+            
             dragState = null;
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', endDrag);
@@ -980,6 +1150,7 @@
             }
             
             updateTrimDisplay(cardId, lineNum, videoName);
+            saveTrimData(lineNum, videoName);  // Save to server
         }
 
         function playTrimmed(cardId) {
@@ -1027,8 +1198,12 @@
             selections[lineNum] = videoName;
             
             // Update UI
-            document.querySelectorAll('.take-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.take-card').forEach(c => {
+                c.classList.remove('selected');
+                c.classList.remove('hovered-for-io'); // Also remove hover indicator
+            });
             card.classList.add('selected');
+            card.classList.remove('hovered-for-io'); // Ensure hover class is removed from selected card
             
             // Generate waveform for the selected card
             const cardId = card.id;
@@ -1050,6 +1225,177 @@
             
             updateProgress();
         }
+
+        async function saveTrimData(lineNum, videoName) {
+            // Save updated trim data to server
+            const trimInfo = trimData[lineNum]?.[videoName];
+            if (trimInfo && selections[lineNum] === videoName) {
+                await fetch('/api/select', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        line_number: lineNum, 
+                        video_name: videoName,
+                        trim: trimInfo 
+                    })
+                });
+            }
+        }
+
+        // Hover preview functionality
+        function startHoverPreview(cardId) {
+            hoveredCardId = cardId; // Track which card is being hovered
+            
+            // Add visual indicator for hover
+            const card = document.getElementById(cardId);
+            if (card && !card.classList.contains('selected')) {
+                card.classList.add('hovered-for-io');
+            }
+            
+            const video = document.getElementById(`video-${cardId}`);
+            if (video && video.readyState >= 2) {
+                video.play().catch(() => {}); // Ignore errors if play fails
+            }
+        }
+
+        function stopHoverPreview(cardId) {
+            if (hoveredCardId === cardId) {
+                hoveredCardId = null; // Clear hover tracking
+            }
+            
+            // Remove visual indicator
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.remove('hovered-for-io');
+            }
+            
+            const video = document.getElementById(`video-${cardId}`);
+            const indicator = document.getElementById(`hover-${cardId}`);
+            if (video) {
+                video.pause();
+            }
+            if (indicator) {
+                indicator.style.width = '0';
+            }
+        }
+
+        function updateHoverPreview(event, cardId) {
+            const video = document.getElementById(`video-${cardId}`);
+            const indicator = document.getElementById(`hover-${cardId}`);
+            const container = event.currentTarget;
+            
+            if (!video || !video.duration) return;
+            
+            const rect = container.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const percent = x / rect.width;
+            const time = percent * video.duration;
+            
+            // Store current hover position for this video
+            hoverPositions[cardId] = time;
+            
+            // Update video position
+            video.currentTime = time;
+            
+            // Update hover indicator
+            if (indicator) {
+                indicator.style.width = `${percent * 100}%`;
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', async (event) => {
+            const key = event.key.toLowerCase();
+            
+            // Handle Enter key (works globally)
+            if (key === 'enter') {
+                event.preventDefault();
+                nextLine();
+                return;
+            }
+            
+            // For 'i' and 'o' keys, prioritize hovered card over selected card
+            if (key === 'i' || key === 'o') {
+                let cardId = hoveredCardId; // Try hovered card first
+                let shouldAutoSelect = false;
+                
+                // If no hovered card, fall back to selected card
+                if (!cardId) {
+                    const selectedCard = document.querySelector('.take-card.selected');
+                    if (selectedCard) {
+                        cardId = selectedCard.id;
+                    }
+                } else {
+                    // If hovering over a card, check if it's not already selected
+                    const hoveredCard = document.getElementById(cardId);
+                    if (hoveredCard && !hoveredCard.classList.contains('selected')) {
+                        shouldAutoSelect = true;
+                    }
+                }
+                
+                if (!cardId) return;
+                
+                const matches = cardId.match(/card-(\d+)-(\d+)/);
+                if (!matches) return;
+                
+                const lineNum = parseInt(matches[1]);
+                const card = document.getElementById(cardId);
+                const videoNameEl = card.querySelector('.video-name');
+                const videoName = videoNameEl.textContent;
+                const video = document.getElementById(`video-${cardId}`);
+                
+                if (!video) return;
+                
+                // Auto-select the card if we're hovering over it
+                if (shouldAutoSelect) {
+                    await selectTake(lineNum, videoName, card);
+                }
+                
+                // Initialize trim data if it doesn't exist
+                if (!trimData[lineNum]) trimData[lineNum] = {};
+                if (!trimData[lineNum][videoName]) {
+                    const duration = video.duration || 0;
+                    trimData[lineNum][videoName] = { start: 0, end: duration };
+                }
+                
+                event.preventDefault();
+                
+                if (key === 'i') {
+                    // Set In point (start of trim) - use hover position if available
+                    const time = hoverPositions[cardId] !== undefined ? hoverPositions[cardId] : video.currentTime;
+                    trimData[lineNum][videoName].start = Math.min(time, trimData[lineNum][videoName].end - 0.1);
+                    updateTrimDisplay(cardId, lineNum, videoName);
+                    saveTrimData(lineNum, videoName);
+                    console.log(`In point set to ${time.toFixed(2)}s`);
+                } else if (key === 'o') {
+                    // Set Out point (end of trim) - use video playback position
+                    trimData[lineNum][videoName].end = Math.max(video.currentTime, trimData[lineNum][videoName].start + 0.1);
+                    updateTrimDisplay(cardId, lineNum, videoName);
+                    saveTrimData(lineNum, videoName);
+                    console.log(`Out point set to ${video.currentTime.toFixed(2)}s`);
+                }
+                
+                return;
+            }
+            
+            // For spacebar, only work on selected card
+            if (key === ' ') {
+                const selectedCard = document.querySelector('.take-card.selected');
+                if (!selectedCard) return;
+                
+                const cardId = selectedCard.id;
+                const video = document.getElementById(`video-${cardId}`);
+                
+                if (video) {
+                    event.preventDefault(); // Prevent page scroll
+                    if (video.paused) {
+                        video.play();
+                    } else {
+                        video.pause();
+                    }
+                }
+            }
+        });
 
         // Initialize on page load
         initialize();
